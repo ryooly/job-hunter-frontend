@@ -607,3 +607,5 @@ function DetailBody({
     </>
   );
 }
+
+

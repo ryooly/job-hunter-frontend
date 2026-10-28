@@ -1,4 +1,10 @@
-import type { Company, District, EducationLevel, JobVacancy } from "./types";
+import type {
+  Company,
+  District,
+  EducationLevel,
+  JobVacancy,
+  VacancyLocation,
+} from "./types";
 
 // Same-origin by default: requests like /job-vacancies are forwarded to the
 // backend by the Vite dev proxy (see vite.config.ts), so other devices on the
@@ -76,6 +82,20 @@ export function fetchVacancies({
 
 export function fetchVacancy(id: number) {
   return request<JobVacancy>(`/job-vacancies/${id}`);
+}
+
+/**
+ * Address-focused rows for the map. Defaults to active jobs only (the
+ * backend's is_active default), matching the live listings.
+ */
+export function fetchVacancyLocations({
+  limit = 200,
+  offset = 0,
+}: { limit?: number; offset?: number } = {}) {
+  return request<VacancyLocation[]>("/job-vacancies/locations", {
+    limit,
+    offset,
+  });
 }
 
 export function fetchCompanies() {

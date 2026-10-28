@@ -38,7 +38,7 @@ function useScrolledDown(): boolean {
 
 interface BottomNavProps {
   /** Highlight the tab matching the current App view. */
-  activeView: "list" | "saved" | "post";
+  activeView: "list" | "saved" | "post" | "map";
   onHome: () => void;
   /** Submit a search keyword from the expanded search bar ("" resets). */
   onSearchSubmit: (keyword: string) => void;
@@ -166,7 +166,7 @@ export function BottomNav({
           {/* Right wing — mirrors the left toward the center. */}
           <div className="bottom-nav-wing bottom-nav-wing-right">
             <button
-              className="bottom-nav-item"
+              className={`bottom-nav-item${activeView === "map" ? " active" : ""}`}
               type="button"
               onClick={onMaps}
               aria-label="Maps"

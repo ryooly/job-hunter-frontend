@@ -45,3 +45,21 @@ export interface JobVacancy {
   is_expired: boolean;
   skills_list: string[];
 }
+
+/**
+ * Address-focused row from GET /job-vacancies/locations. The backend computes
+ * `region` ("<district>, <city>") and `best_address` (street + region when a
+ * street exists, otherwise just the region), so this is what the map geocodes.
+ */
+export interface VacancyLocation {
+  id: number;
+  title: string;
+  street_address: string | null;
+  district_name: string;
+  district_city: string;
+  region: string;
+  best_address: string;
+  /** Cached district centroid from the API — the map uses it instead of geocoding. */
+  latitude: number | null;
+  longitude: number | null;
+}

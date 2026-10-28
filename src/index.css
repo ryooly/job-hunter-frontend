@@ -3143,3 +3143,145 @@ main {
     padding-bottom: 84px;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Job map (Banjarnegara)                                              */
+/* ------------------------------------------------------------------ */
+.map-section {
+  padding: 26px 0 40px;
+  background: var(--bg-soft);
+  min-height: 60vh;
+}
+
+.map-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.map-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.map-back:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.map-head-text {
+  min-width: 0;
+}
+.map-title {
+  margin: 0;
+  font-family: var(--font-shell);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+.map-status {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.map-canvas {
+  position: relative;
+  height: 62vh;
+  min-height: 380px;
+  width: 100%;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(13, 35, 64, 0.1);
+  z-index: 0;
+}
+
+/* Overlay shown when the Google Maps JS API fails to load (bad/limited key,
+   network or billing) — so a blank map always explains itself. */
+.map-error {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  padding: 24px;
+  background: var(--bg-soft);
+  color: var(--text);
+}
+.map-error-title {
+  margin: 0;
+  font-family: var(--font-shell);
+  font-size: 17px;
+  font-weight: 700;
+}
+.map-error-msg {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.map-error-hint {
+  margin: 6px 0 0;
+  max-width: 420px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Popup card — rendered inside Google's InfoWindow, so only our content
+   classes are styled here (the frame chrome belongs to Google). */
+.job-pin-popup {
+  font-family: var(--font-body);
+  min-width: 180px;
+  max-width: 240px;
+}
+.job-pin-popup-level {
+  margin: 0 0 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.job-pin-popup-level.is-street {
+  color: var(--primary);
+}
+.job-pin-popup-level.is-region {
+  color: var(--text-muted);
+}
+.job-pin-popup-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.job-pin-popup-addr {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+.job-pin-popup-link {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+}
+.job-pin-popup-link:hover {
+  text-decoration: underline;
+}

@@ -6,6 +6,7 @@ import { Footer } from "./components/Footer";
 import { Header, type MenuAction } from "./components/Header";
 import { JobDetail } from "./components/JobDetail";
 import { JobList } from "./components/JobList";
+import { JobMap } from "./components/JobMap";
 import { JobPost } from "./components/JobPost";
 import { LoginModal } from "./components/LoginModal";
 import { useAuth } from "./hooks/useAuth";
@@ -33,7 +34,7 @@ export default function App() {
   const [category, setCategory] = useState("all");
 
   // Bottom-bar destinations switch state directly — no URL routing.
-  const [view, setView] = useState<"list" | "saved" | "post">("list");
+  const [view, setView] = useState<"list" | "saved" | "post" | "map">("list");
   // The account dialog doubles as login and register.
   const [authModal, setAuthModal] = useState<"login" | "register" | null>(null);
 
@@ -88,6 +89,11 @@ export default function App() {
     leaveDetail();
     setView("saved");
   };
+  const goMaps = () => {
+    leaveDetail();
+    setView("map");
+    window.scrollTo({ top: 0 });
+  };
 
   // Detail-page chips apply a filter and return to the filtered list.
   const handleFilterChip = (id: string) => {
@@ -106,9 +112,16 @@ export default function App() {
     else setAuthModal("register");
   };
 
-  // Bottom-bar "Maps": no in-app map view yet, so hand off to Google Maps.
+  // Bottom-bar "Maps": in-app Leaflet view centred on Banjarnegara.
   const handleMaps = () => {
-    window.open("https://maps.google.com", "_blank", "noopener,noreferrer");
+    goMaps();
+  };
+
+  // The map's back button returns to the list, preserving its filters.
+  const goBackToList = () => {
+    leaveDetail();
+    setView("list");
+    window.scrollTo({ top: 0 });
   };
 
   // Account-menu destinations. Home and saved navigate; the rest are
@@ -161,6 +174,8 @@ export default function App() {
             />
           ) : view === "post" ? (
             <JobPost onCancel={goHome} />
+          ) : view === "map" ? (
+            <JobMap onBack={goBackToList} />
           ) : view === "saved" ? (
             <JobList
               vacancies={savedVacancies}
@@ -202,7 +217,7 @@ export default function App() {
 
       <Footer />
 
-      {/* Home only — the bar hides on detail, saved, and posting pages. */}
+      {/* Home only — the bar hides on detail, saved, posting, and map pages. */}
       {jobId === null && view === "list" && (
         <BottomNav
           activeView={view}
