@@ -15,6 +15,9 @@ export interface JobMarker {
   precise: boolean;
   /** Human-readable address shown in the popup. */
   address: string;
+  /** Poster name + logo, shown on the matching list row. */
+  companyName: string | null;
+  companyLogoUrl: string | null;
 }
 
 /** A resolved single location, before co-located jobs are spread apart. */
@@ -25,6 +28,8 @@ interface ResolvedMarker {
   lng: number;
   precise: boolean;
   address: string;
+  companyName: string | null;
+  companyLogoUrl: string | null;
   /** Key grouping jobs that resolve to the same point (the address string). */
   groupKey: string;
   /** Area bounds of the geocoded feature, when it is an area. */
@@ -72,6 +77,8 @@ async function resolveMarker(
         lng: street.lng,
         precise: true,
         address: loc.best_address,
+        companyName: loc.company_name,
+        companyLogoUrl: loc.company_logo_url,
         groupKey: loc.best_address,
         bbox: street.bbox,
       };
@@ -87,6 +94,8 @@ async function resolveMarker(
       lng: loc.longitude as number,
       precise: false,
       address: loc.region,
+      companyName: loc.company_name,
+      companyLogoUrl: loc.company_logo_url,
       groupKey: loc.region,
     };
   }
@@ -101,6 +110,8 @@ async function resolveMarker(
       lng: region.lng,
       precise: false,
       address: loc.region,
+      companyName: loc.company_name,
+      companyLogoUrl: loc.company_logo_url,
       groupKey: loc.region,
       bbox: region.bbox,
     };
@@ -152,14 +163,18 @@ function spreadCoLocated(placed: ResolvedMarker[]): JobMarker[] {
   for (const group of groups.values()) {
     if (group.length > 1) layoutGroup(group);
   }
-  return placed.map(({ id, title, lat, lng, precise, address }) => ({
-    id,
-    title,
-    lat,
-    lng,
-    precise,
-    address,
-  }));
+  return placed.map(
+    ({ id, title, lat, lng, precise, address, companyName, companyLogoUrl }) => ({
+      id,
+      title,
+      lat,
+      lng,
+      precise,
+      address,
+      companyName,
+      companyLogoUrl,
+    }),
+  );
 }
 
 /**

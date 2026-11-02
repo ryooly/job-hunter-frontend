@@ -133,6 +133,7 @@ export interface CompanyInput {
   instagram_url: string | null;
   linkedin_url: string | null;
   cover_image: string | null;
+  factory_image: string | null;
 }
 
 /** Body accepted by POST /job-vacancies. Skills is the raw comma-separated string. */

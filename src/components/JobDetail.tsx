@@ -31,6 +31,8 @@ interface JobDetailProps {
   onToggleBookmark: (id: number) => void;
   /** Apply a filter from a detail chip and return to the filtered list. */
   onFilterChip: (id: string) => void;
+  /** Open the map centred on this vacancy's marker. */
+  onViewOnMap: (id: number) => void;
 }
 
 /** "5 Okt 2026"-style date with year. */
@@ -199,6 +201,7 @@ export function JobDetail({
   saved,
   onToggleBookmark,
   onFilterChip,
+  onViewOnMap,
 }: JobDetailProps) {
   const { vacancy, loading, error } = useVacancyDetail(vacancyId);
 
@@ -217,6 +220,7 @@ export function JobDetail({
             saved={saved}
             onToggleBookmark={onToggleBookmark}
             onFilterChip={onFilterChip}
+            onViewOnMap={onViewOnMap}
           />
         )}
       </div>
@@ -268,11 +272,13 @@ function DetailBody({
   saved,
   onToggleBookmark,
   onFilterChip,
+  onViewOnMap,
 }: {
   vacancy: JobVacancy;
   saved: boolean;
   onToggleBookmark: (id: number) => void;
   onFilterChip: (id: string) => void;
+  onViewOnMap: (id: number) => void;
 }) {
   const company = vacancy.company?.name ?? "Perusahaan";
   const district = vacancy.district;
@@ -525,14 +531,30 @@ function DetailBody({
             <h3>Informasi Perusahaan</h3>
             <dl className="info-list">
               <InfoRow label="Nama" value={company} />
-              <InfoRow
-                label="Lokasi Kerja"
-                value={
-                  vacancy.street_address
-                    ? `${vacancy.street_address}, ${location}`
-                    : location
-                }
-              />
+              {district ? (
+                <div className="info-row">
+                  <dt>Lokasi Kerja</dt>
+                  <dd>
+                    {/* Press the location to open the map centred on this job's
+                        marker — the same pin its numbered list row refers to. */}
+                    <button
+                      type="button"
+                      className="info-map-link"
+                      onClick={() => onViewOnMap(vacancy.id)}
+                      title="Lihat lokasi ini di peta"
+                    >
+                      <span className="info-map-link-text">
+                        {vacancy.street_address
+                          ? `${vacancy.street_address}, ${location}`
+                          : location}
+                      </span>
+                      <PinIcon width={14} height={14} />
+                    </button>
+                  </dd>
+                </div>
+              ) : (
+                <InfoRow label="Lokasi Kerja" value={location} />
+              )}
               {website && <InfoLinkRow label="Website" href={website} />}
               <div className="info-row">
                 <dt>Status</dt>

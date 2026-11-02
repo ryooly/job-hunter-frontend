@@ -1471,27 +1471,37 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px 6px 6px;
+  padding: 5px 13px 5px 5px;
   border-radius: 999px;
-  background: var(--surface);
-  border: 1.5px solid color-mix(in srgb, var(--skill-color) 30%, transparent);
-  box-shadow:
-    0 2px 8px color-mix(in srgb, var(--skill-color) 15%, transparent),
-    0 1px 2px rgba(13, 35, 64, 0.04);
+  /* A flat tint under a diagonal sheen: the sheen is a translucent overlay,
+     so hovering animates the tint beneath it instead of snapping. Depth
+     comes from the gradient and a hairline bevel, never a glow behind it. */
+  background-color: color-mix(in srgb, var(--skill-color) 11%, var(--surface));
+  background-image: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--skill-color) 14%, transparent),
+    color-mix(in srgb, var(--skill-color) 2%, transparent) 74%
+  );
+  border: 1px solid color-mix(in srgb, var(--skill-color) 34%, var(--surface));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
   font-size: 13.5px;
   font-weight: 600;
-  color: var(--text);
+  letter-spacing: -0.005em;
+  /* Label picks up a hint of the brand hue instead of flat slate. */
+  color: color-mix(in srgb, var(--skill-color) 28%, var(--text));
   transition:
     transform 0.18s ease,
-    box-shadow 0.18s ease,
+    background-color 0.18s ease,
     border-color 0.18s ease;
 }
 .skill-badge:hover {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--skill-color) 55%, transparent);
-  box-shadow:
-    0 6px 16px color-mix(in srgb, var(--skill-color) 25%, transparent),
-    0 2px 4px rgba(13, 35, 64, 0.06);
+  background-color: color-mix(in srgb, var(--skill-color) 18%, var(--surface));
+  border-color: color-mix(in srgb, var(--skill-color) 52%, var(--surface));
+}
+/* The bevel is a light catch — keep it from glaring on the dark theme. */
+:root[data-theme="night"] .skill-badge {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .skill-badge-icon {
   display: inline-flex;
@@ -1500,7 +1510,14 @@ main {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--skill-color) 12%, white);
+  /* A deeper coin of the same hue, ringed by a hairline of its own color. */
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--skill-color) 26%, var(--surface)),
+    color-mix(in srgb, var(--skill-color) 11%, var(--surface))
+  );
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--skill-color) 16%, transparent);
   color: var(--skill-color);
   flex-shrink: 0;
 }
@@ -1605,6 +1622,38 @@ main {
 }
 .info-link:hover {
   border-bottom-color: var(--accent);
+}
+
+/* Pressable "Lokasi Kerja" row — a plain-looking text button that opens the
+   map centred on this job's marker. */
+.info-map-link {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  max-width: 100%;
+}
+/* Underline is always on (not hover-only) so touch users, who never fire
+   :hover, can still tell the location is tappable. */
+.info-map-link-text {
+  color: var(--accent);
+  font-weight: 600;
+  text-align: right;
+  border-bottom: 1px solid var(--accent);
+  transition: border-color 0.15s ease;
+}
+.info-map-link svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--accent);
+}
+.info-map-link:hover .info-map-link-text {
+  border-bottom-color: var(--primary-dark);
 }
 
 /* Status badge */
@@ -2745,7 +2794,8 @@ main {
   place-items: center;
   border: none;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.08);
+  /* Tinted like the chip it sits in; the hue arrives via --skill-color. */
+  background: color-mix(in srgb, var(--skill-color) 16%, transparent);
   color: var(--text-muted);
   transition:
     background 0.15s ease,
@@ -2753,7 +2803,7 @@ main {
     transform 0.15s ease;
 }
 .skill-badge-remove:hover {
-  background: rgba(0, 0, 0, 0.16);
+  background: color-mix(in srgb, var(--skill-color) 28%, transparent);
   color: var(--text);
 }
 .skill-badge-remove:active {
@@ -3244,44 +3294,179 @@ main {
   color: var(--text-muted);
 }
 
-/* Popup card — rendered inside Google's InfoWindow, so only our content
-   classes are styled here (the frame chrome belongs to Google). */
-.job-pin-popup {
-  font-family: var(--font-body);
-  min-width: 180px;
-  max-width: 240px;
+/* List of the jobs currently plotted on the map. Each row is numbered to match
+   its pin and links to its detail page via the #job-<id> deep link. */
+.map-job-list-wrap {
+  margin-top: 18px;
 }
-.job-pin-popup-level {
-  margin: 0 0 4px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-}
-.job-pin-popup-level.is-street {
-  color: var(--primary);
-}
-.job-pin-popup-level.is-region {
-  color: var(--text-muted);
-}
-.job-pin-popup-title {
-  margin: 0 0 4px;
-  font-size: 14px;
+.map-job-list-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-family: var(--font-shell);
+  font-size: 15px;
   font-weight: 700;
   color: var(--text);
 }
-.job-pin-popup-addr {
-  margin: 0 0 8px;
+.map-job-list-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.map-job-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.map-job-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+.map-job-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 6px 18px rgba(13, 35, 64, 0.12);
+  transform: translateY(-2px);
+}
+/* Momentary ring + pulse on the row whose marker was just revealed on the map
+   (added imperatively from JobMap when arriving from a detail page). */
+.map-job-item.is-focus {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  animation: map-job-focus-pulse 1.2s ease-in-out 2;
+}
+@keyframes map-job-focus-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(77, 139, 255, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(77, 139, 255, 0.28);
+  }
+}
+/* Company logo acts as the row's anchor, with the numbered "mark" overlaid in
+   the corner so it still matches its pin on the map. */
+.map-job-avatar {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+.map-job-avatar-media {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--bg-soft);
+  box-shadow: 0 2px 6px rgba(13, 35, 64, 0.08);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font-family: var(--font-shell);
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 15px;
+}
+.map-job-avatar-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.map-job-badge {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  border: 2px solid var(--surface);
+  background: #0d2340;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.map-job-badge.is-region {
+  background: #4f6b96;
+}
+.map-job-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.map-job-item-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.map-job-item-company {
+  margin-top: 1px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text);
+  opacity: 0.55;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.map-job-item-addr {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 2px;
   font-size: 12.5px;
-  line-height: 1.4;
+  line-height: 1.35;
   color: var(--text-muted);
 }
-.job-pin-popup-link {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--primary);
-  text-decoration: none;
+.map-job-item-addr svg {
+  flex: none;
+  margin-top: 2px;
 }
-.job-pin-popup-link:hover {
-  text-decoration: underline;
+.map-job-more {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--primary);
+  font-family: var(--font-shell);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+.map-job-more:hover {
+  border-color: var(--primary);
+  background: var(--bg-soft);
 }

@@ -32,6 +32,7 @@ const EMPTY_COMPANY: CompanyForm = {
   instagram_url: "",
   linkedin_url: "",
   cover_image: "",
+  factory_image: "",
 };
 
 const blankOrNull = (value: string): string | null => value.trim() || null;
@@ -410,6 +411,7 @@ export function JobPost({ onCancel }: JobPostProps) {
           instagram_url: blankOrNull(newCompany.instagram_url),
           linkedin_url: blankOrNull(newCompany.linkedin_url),
           cover_image: newCompany.cover_image.trim() || null,
+          factory_image: newCompany.factory_image.trim() || null,
         });
         finalCompanyId = company.id;
       }
@@ -730,6 +732,14 @@ export function JobPost({ onCancel }: JobPostProps) {
                   value={newCompany.cover_image}
                   onChange={(next) =>
                     setNewCompany({ ...newCompany, cover_image: next })
+                  }
+                />
+                <DropZone
+                  label="Foto pabrik"
+                  variant="cover"
+                  value={newCompany.factory_image}
+                  onChange={(next) =>
+                    setNewCompany({ ...newCompany, factory_image: next })
                   }
                 />
 

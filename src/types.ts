@@ -15,6 +15,8 @@ export interface Company {
   instagram_url: string | null;
   linkedin_url: string | null;
   cover_image: string | null;
+  /** Optional photo of the factory / production site. */
+  factory_image: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -62,4 +64,7 @@ export interface VacancyLocation {
   /** Cached district centroid from the API — the map uses it instead of geocoding. */
   latitude: number | null;
   longitude: number | null;
+  /** Poster identity, so the map's job list can show a logo + name. */
+  company_name: string | null;
+  company_logo_url: string | null;
 }

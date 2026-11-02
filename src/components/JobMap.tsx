@@ -5,45 +5,33 @@ import type { Renderer } from "@googlemaps/markerclusterer";
 
 import { loadGoogleMaps } from "../utils/googleMaps";
 import { BANJARNEGARA_CENTER } from "../utils/geocode";
-import { useJobMarkers, type JobMarker } from "../hooks/useJobMarkers";
-
-/** Escape text before dropping it into an innerHTML popup string. */
-function escapeHtml(value: string): string {
-  return value.replace(
-    /[&<>"']/g,
-    (ch) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-      })[ch] as string,
-  );
-}
+import { initials } from "../utils/format";
+import { PinIcon } from "./Icons";
+import { useJobMarkers } from "../hooks/useJobMarkers";
 
 // Brand navy, kept in sync with --primary in index.css (SVG data URLs cannot
-// read CSS variables). Individual jobs are premium teardrop pins — a gradient
-// body, white ring and soft drop shadow so they never blend into the basemap,
-// with the tip anchored exactly on the coordinate. When several fall together
-// at low zoom the clusterer swaps them for a numbered navy bubble. Fill
-// encodes precision: dark navy = specific street, mid navy = region-level.
+// read CSS variables). Individual jobs are premium numbered teardrop pins — a
+// gradient body, white ring and soft drop shadow so they never blend into the
+// basemap, with the tip anchored exactly on the coordinate and the job's number
+// in the head (matching its row in the list below the map). When several fall
+// together at low zoom the clusterer swaps them for a bubble showing the count.
+// Fill encodes precision: dark navy = specific street, mid navy = region-level.
 const NAVY = "#0d2340";
 const NAVY_MID = "#4f6b96";
 const RING = "#ffffff";
 
-/** A single job pin (no number); the white dot marks the head. */
-function pinDataUrl(precise: boolean): string;
-/** A cluster keeps the SAME teardrop shape, just with the count in its head. */
-function pinDataUrl(precise: boolean, count: number): string;
-function pinDataUrl(precise: boolean, count?: number): string {
+// How many jobs the list shows before the "view all" toggle expands it.
+const VISIBLE_LIMIT = 5;
+
+// Zoom used to reveal a focused marker; one level above the clusterer's
+// maxZoom (16) so a co-located pin always breaks free of its cluster bubble.
+const FOCUS_ZOOM = 17;
+
+/** Teardrop pin with a number in its head — the job's index, or a cluster's count. */
+function pinDataUrl(precise: boolean, number: number): string {
   const top = precise ? "#2a4d80" : "#7f9ac0";
   const bottom = precise ? NAVY : NAVY_MID;
-  // The count replaces the white dot when present (cluster bubbles).
-  const head =
-    count === undefined
-      ? `<circle cx='20' cy='18' r='6' fill='${RING}'/>`
-      : `<text x='20' y='18.5' fill='${RING}' font-family='Arial, Helvetica, sans-serif' font-size='${count < 10 ? 15 : 12}' font-weight='700' text-anchor='middle' dominant-baseline='central'>${count}</text>`;
+  const head = `<text x='20' y='18.5' fill='${RING}' font-family='Arial, Helvetica, sans-serif' font-size='${number < 10 ? 15 : 12}' font-weight='700' text-anchor='middle' dominant-baseline='central'>${number}</text>`;
   const svg =
     `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 52' width='40' height='52'>` +
     `<defs>` +
@@ -61,10 +49,10 @@ function pinDataUrl(precise: boolean, count?: number): string {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
-/** A numbered cluster keeps the pin shape — only the head shows the count. */
-function pinIcon(precise: boolean, count?: number): google.maps.Icon {
+/** Teardrop pin carrying a number in its head (job index or cluster count). */
+function pinIcon(precise: boolean, number: number): google.maps.Icon {
   return {
-    url: count === undefined ? pinDataUrl(precise) : pinDataUrl(precise, count),
+    url: pinDataUrl(precise, number),
     scaledSize: new google.maps.Size(40, 52),
     // Anchor the tip on the coordinate so the exact location is unmistakable.
     anchor: new google.maps.Point(20, 50),
@@ -83,27 +71,17 @@ const clusterRenderer: Renderer = {
   },
 };
 
-function popupHtml(marker: JobMarker): string {
-  const level = marker.precise ? "Alamat lengkap" : "Perkiraan area";
-  const levelClass = marker.precise ? " is-street" : " is-region";
-  return `
-    <div class="job-pin-popup">
-      <p class="job-pin-popup-level${levelClass}">${level}</p>
-      <h3 class="job-pin-popup-title">${escapeHtml(marker.title)}</h3>
-      <p class="job-pin-popup-addr">${escapeHtml(marker.address)}</p>
-      <a class="job-pin-popup-link" href="#job-${marker.id}">Lihat detail &rarr;</a>
-    </div>`;
-}
-
 interface JobMapProps {
   /** Return to the previous view (the job list). */
   onBack: () => void;
+  /** When set, centre and flash this job's marker (opened from its detail page). */
+  focusId?: number | null;
 }
 
-export function JobMap({ onBack }: JobMapProps) {
+export function JobMap({ onBack, focusId = null }: JobMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const infoRef = useRef<google.maps.InfoWindow | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
   // Owns the current cluster layer so it can be torn down before each repaint.
   const clusterRef = useRef<MarkerClusterer | null>(null);
@@ -115,6 +93,8 @@ export function JobMap({ onBack }: JobMapProps) {
   const [mapError, setMapError] = useState<string | null>(null);
 
   const { markers, loading, error, total } = useJobMarkers();
+  // The list starts collapsed to VISIBLE_LIMIT rows; this flips it open.
+  const [showAll, setShowAll] = useState(false);
 
   // Load the JS API and create the map, opening on Banjarnegara. Once the
   // job pins resolve we re-frame to them (see the marker effect below).
@@ -140,7 +120,6 @@ export function JobMap({ onBack }: JobMapProps) {
             { featureType: "transit", stylers: [{ visibility: "off" }] },
           ],
         });
-        infoRef.current = new google.maps.InfoWindow({ maxWidth: 280 });
         setMapReady(true);
       })
       .catch((err: unknown) => {
@@ -157,12 +136,11 @@ export function JobMap({ onBack }: JobMapProps) {
     };
   }, []);
 
-  // Repaint markers whenever the resolved set changes. One shared InfoWindow
-  // is reused per click so only ever one card is open.
+  // Repaint markers whenever the resolved set changes. Each pin carries its
+  // number and, on click, deep-links straight to that job's detail page.
   useEffect(() => {
     const map = mapRef.current;
-    const info = infoRef.current;
-    if (!mapReady || !map || !info) return;
+    if (!mapReady || !map) return;
 
     // Tear down the previous cluster layer and any loose pins first.
     if (clusterRef.current) {
@@ -174,15 +152,16 @@ export function JobMap({ onBack }: JobMapProps) {
 
     if (markers.length > 0) {
       // One pin per job; the clusterer owns their map attachment from here.
-      const pins = markers.map((marker) => {
+      const pins = markers.map((marker, i) => {
         const pin = new google.maps.Marker({
           position: { lat: marker.lat, lng: marker.lng },
-          title: marker.title,
-          icon: pinIcon(marker.precise),
+          // Native hover tooltip shows the same number as the matching list row.
+          title: `${i + 1}. ${marker.title}`,
+          icon: pinIcon(marker.precise, i + 1),
         });
+        // Clicking a pin jumps straight to that job's detail page.
         pin.addListener("click", () => {
-          info.setContent(popupHtml(marker));
-          info.open({ anchor: pin, map });
+          window.location.hash = `#job-${marker.id}`;
         });
         return pin;
       });
@@ -208,6 +187,41 @@ export function JobMap({ onBack }: JobMapProps) {
       if (zoom !== undefined && zoom > 14) map.setZoom(14);
     }
   }, [markers, mapReady]);
+
+  // When arriving from a job's detail page, reveal its marker: expand the list
+  // if the row sits past the cap, then centre and bounce the matching pin. The
+  // pins are created in order in the repaint effect above, so markersRef holds
+  // the same indices as `markers`.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map || focusId == null || markers.length === 0) return;
+    const idx = markers.findIndex((m) => m.id === focusId);
+    if (idx < 0) return;
+    if (idx >= VISIBLE_LIMIT) setShowAll(true);
+    const target = markers[idx];
+    map.panTo({ lat: target.lat, lng: target.lng });
+    map.setZoom(FOCUS_ZOOM);
+    const pin = markersRef.current[idx];
+    if (!pin) return;
+    pin.setAnimation(google.maps.Animation.BOUNCE);
+    const t = window.setTimeout(() => pin.setAnimation(null), 2400);
+    return () => window.clearTimeout(t);
+  }, [focusId, markers, mapReady]);
+
+  // Flash the matching numbered row once it is on screen (it may render only
+  // after the effect above expands the collapsed list).
+  useEffect(() => {
+    if (focusId == null) return;
+    const idx = markers.findIndex((m) => m.id === focusId);
+    if (idx < 0 || (!showAll && idx >= VISIBLE_LIMIT)) return;
+    const el = listRef.current?.querySelector<HTMLElement>(
+      `[data-job-id="${focusId}"]`,
+    );
+    if (!el) return;
+    el.classList.add("is-focus");
+    const t = window.setTimeout(() => el.classList.remove("is-focus"), 2400);
+    return () => window.clearTimeout(t);
+  }, [focusId, markers, showAll]);
 
   const statusText = mapError
     ? "Peta tidak dapat dimuat."
@@ -247,6 +261,78 @@ export function JobMap({ onBack }: JobMapProps) {
             </div>
           )}
         </div>
+
+        {!mapError && markers.length > 0 && (
+          <div className="map-job-list-wrap">
+            <h3 className="map-job-list-title">
+              Lowongan di peta
+              <span className="map-job-list-count">{markers.length}</span>
+            </h3>
+            <ul className="map-job-list" ref={listRef}>
+              {markers.map((marker, i) =>
+                // Cap the visible rows; the rest stay reachable via the toggle
+                // below so a long list never pushes the map off screen.
+                !showAll && i >= VISIBLE_LIMIT ? null : (
+                  <li key={marker.id} data-job-id={marker.id}>
+                    {/* Same #job-<id> deep link the pins use: App turns the hash
+                        into the JobDetail view on click. */}
+                    <a
+                      className="map-job-item"
+                      href={`#job-${marker.id}`}
+                      title={marker.address}
+                    >
+                      <span className="map-job-avatar">
+                        <span className="map-job-avatar-media">
+                          {marker.companyLogoUrl ? (
+                            <img
+                              src={marker.companyLogoUrl}
+                              alt=""
+                              loading="lazy"
+                            />
+                          ) : (
+                            initials(marker.companyName ?? "Perusahaan")
+                          )}
+                        </span>
+                        {/* Number matches the pin's head so the row and its
+                            marker on the map reference each other. */}
+                        <span
+                          className={`map-job-badge${marker.precise ? " is-street" : " is-region"}`}
+                        >
+                          {i + 1}
+                        </span>
+                      </span>
+                      <span className="map-job-item-text">
+                        <span className="map-job-item-title">{marker.title}</span>
+                        {/* Publisher byline — a faint, small line under the title. */}
+                        <span className="map-job-item-company">
+                          {marker.companyName ?? "Perusahaan"}
+                        </span>
+                        <span className="map-job-item-addr">
+                          {/* Location gets its own left icon, mirroring the
+                              company logo. */}
+                          <PinIcon width={12} height={12} />
+                          <span>{marker.address}</span>
+                        </span>
+                      </span>
+                    </a>
+                  </li>
+                ),
+              )}
+            </ul>
+            {markers.length > VISIBLE_LIMIT && (
+              <button
+                type="button"
+                className="map-job-more"
+                onClick={() => setShowAll((prev) => !prev)}
+                aria-expanded={showAll}
+              >
+                {showAll
+                  ? "Tampilkan lebih sedikit"
+                  : `Lihat semua ${markers.length} lowongan`}
+              </button>
+            )}
+          </div>
+        )}
 
         {!mapError && !loading && !error && markers.length === 0 && (
           <div className="empty-state">

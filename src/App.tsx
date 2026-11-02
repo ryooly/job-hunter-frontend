@@ -35,6 +35,8 @@ export default function App() {
 
   // Bottom-bar destinations switch state directly — no URL routing.
   const [view, setView] = useState<"list" | "saved" | "post" | "map">("list");
+  // When set, the map opens centred on this job's marker (detail page → map).
+  const [mapFocusId, setMapFocusId] = useState<number | null>(null);
   // The account dialog doubles as login and register.
   const [authModal, setAuthModal] = useState<"login" | "register" | null>(null);
 
@@ -91,6 +93,15 @@ export default function App() {
   };
   const goMaps = () => {
     leaveDetail();
+    setMapFocusId(null);
+    setView("map");
+    window.scrollTo({ top: 0 });
+  };
+
+  // Open the map centred on one job's marker, jumping here from its detail page.
+  const openOnMap = (id: number) => {
+    leaveDetail();
+    setMapFocusId(id);
     setView("map");
     window.scrollTo({ top: 0 });
   };
@@ -120,6 +131,7 @@ export default function App() {
   // The map's back button returns to the list, preserving its filters.
   const goBackToList = () => {
     leaveDetail();
+    setMapFocusId(null);
     setView("list");
     window.scrollTo({ top: 0 });
   };
@@ -171,11 +183,12 @@ export default function App() {
               saved={bookmarks.has(jobId)}
               onToggleBookmark={bookmarks.toggle}
               onFilterChip={handleFilterChip}
+              onViewOnMap={openOnMap}
             />
           ) : view === "post" ? (
             <JobPost onCancel={goHome} />
           ) : view === "map" ? (
-            <JobMap onBack={goBackToList} />
+            <JobMap onBack={goBackToList} focusId={mapFocusId} />
           ) : view === "saved" ? (
             <JobList
               vacancies={savedVacancies}
