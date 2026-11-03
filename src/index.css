@@ -176,6 +176,22 @@ main {
   font-size: 15px;
 }
 
+/* Inline loading spinner for buttons (e.g. "Load more"). Uses currentColor so it
+   adapts to light and night button text without extra theme rules. */
+.btn-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.7s linear infinite;
+}
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .btn-outline {
   display: inline-flex;
   align-items: center;

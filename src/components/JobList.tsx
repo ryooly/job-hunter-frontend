@@ -72,9 +72,17 @@ export function JobList({
               className="btn-solid btn-lg"
               type="button"
               disabled={loading}
+              aria-busy={loading}
               onClick={onLoadMore}
             >
-              {loading ? "Loading..." : "Load more jobs"}
+              {loading ? (
+                <>
+                  <span className="btn-spinner" aria-hidden="true" />
+                  Loading...
+                </>
+              ) : (
+                "Load more jobs"
+              )}
             </button>
           </div>
         )}

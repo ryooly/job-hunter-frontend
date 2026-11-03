@@ -5,6 +5,9 @@ import { resolveCategory } from "../data/categories";
 import type { JobVacancy } from "../types";
 
 const PAGE_SIZE = 9;
+// Minimum time the "load more" spinner stays visible, so a near-instant reply
+// still reads as intentional feedback before the next batch of jobs appears.
+const MIN_LOAD_MS = 450;
 
 interface UseVacanciesArgs {
   /** Raw search-box value. */
@@ -67,6 +70,7 @@ export function useVacancies({ keyword, category }: UseVacanciesArgs) {
   const loadMore = useCallback(async () => {
     if (loadingRef.current) return;
     const seq = querySeq.current;
+    const startedAt = Date.now();
     loadingRef.current = true;
     setLoading(true);
 
@@ -76,6 +80,14 @@ export function useVacancies({ keyword, category }: UseVacanciesArgs) {
         limit: PAGE_SIZE,
         offset: offset.current,
       });
+
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < MIN_LOAD_MS) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, MIN_LOAD_MS - elapsed),
+        );
+      }
+
       if (seq !== querySeq.current) return;
       offset.current += page.length;
       setVacancies((prev) => [...prev, ...page]);
