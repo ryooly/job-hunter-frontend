@@ -30,6 +30,8 @@ export interface JobVacancy {
   skills: string | null;
   // Optional street-level address; district_code remains the required area.
   street_address: string | null;
+  // Optional external application URL the "Apply" button opens.
+  link: string | null;
   min_education_level: EducationLevel;
   min_experience_years: number;
   application_deadline: string | null;
@@ -67,4 +69,17 @@ export interface VacancyLocation {
   /** Poster identity, so the map's job list can show a logo + name. */
   company_name: string | null;
   company_logo_url: string | null;
+}
+
+/**
+ * Result of a Google Safe Browsing check from POST /link-safety. `checked`
+ * is false when the lookup could not complete, so "unknown" is never treated
+ * as "dangerous".
+ */
+export interface LinkSafety {
+  url: string;
+  safe: boolean;
+  checked: boolean;
+  threat_types: string[];
+  error: string | null;
 }

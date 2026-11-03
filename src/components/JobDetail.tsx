@@ -292,6 +292,8 @@ function DetailBody({
   const instagram = vacancy.company?.instagram_url ?? null;
   const linkedin = vacancy.company?.linkedin_url ?? null;
   const hasLinks = Boolean(website || instagram || linkedin);
+  // Optional external application URL; when set, the "Apply" buttons open it.
+  const applyLink = vacancy.link;
 
   // Share the vacancy: native share sheet where available, otherwise copy
   // the current URL to the clipboard and briefly flag it as copied.
@@ -465,10 +467,22 @@ function DetailBody({
                 </div>
 
                 <div className="detail-hero-actions">
-                  <button type="button" className="btn-solid btn-apply">
-                    Lamar Sekarang
-                    <SendIcon width={15} height={15} />
-                  </button>
+                  {applyLink ? (
+                    <a
+                      className="btn-solid btn-apply"
+                      href={applyLink}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Lamar Sekarang
+                      <SendIcon width={15} height={15} />
+                    </a>
+                  ) : (
+                    <button type="button" className="btn-solid btn-apply">
+                      Lamar Sekarang
+                      <SendIcon width={15} height={15} />
+                    </button>
+                  )}
                   {posted && (
                     <span className="detail-posted">Diposting {posted}</span>
                   )}
@@ -594,13 +608,25 @@ function DetailBody({
       {createPortal(
         <div className="detail-actionbar">
           <div className="detail-actionbar-inner">
-            <button
-              type="button"
-              className="btn-solid btn-apply detail-action-apply"
-            >
-              Lamar Sekarang
-              <SendIcon width={16} height={16} />
-            </button>
+            {applyLink ? (
+              <a
+                className="btn-solid btn-apply detail-action-apply"
+                href={applyLink}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Lamar Sekarang
+                <SendIcon width={16} height={16} />
+              </a>
+            ) : (
+              <button
+                type="button"
+                className="btn-solid btn-apply detail-action-apply"
+              >
+                Lamar Sekarang
+                <SendIcon width={16} height={16} />
+              </button>
+            )}
 
             <button
               type="button"
@@ -629,5 +655,3 @@ function DetailBody({
     </>
   );
 }
-
-

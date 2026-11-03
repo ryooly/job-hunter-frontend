@@ -2388,6 +2388,35 @@ main {
 :root[data-theme="night"] .post-district-error {
   color: #fca5a5;
 }
+
+/* Real-time link-safety status under the application-link field. */
+.post-link-status {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 500;
+}
+.post-link-checking {
+  color: var(--text-muted);
+}
+.post-link-ok {
+  color: #15803d;
+}
+.post-link-warn {
+  color: #b45309;
+}
+.post-link-danger {
+  color: #b91c1c;
+  font-weight: 600;
+}
+:root[data-theme="night"] .post-link-ok {
+  color: #4ade80;
+}
+:root[data-theme="night"] .post-link-warn {
+  color: #fbbf24;
+}
+:root[data-theme="night"] .post-link-danger {
+  color: #fca5a5;
+}
 .post-district-actions {
   display: flex;
   justify-content: flex-end;

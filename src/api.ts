@@ -3,6 +3,7 @@ import type {
   District,
   EducationLevel,
   JobVacancy,
+  LinkSafety,
   VacancyLocation,
 } from "./types";
 
@@ -144,6 +145,7 @@ export interface VacancyInput {
   responsibilities: string | null;
   skills: string | null;
   street_address: string | null;
+  link: string | null;
   min_education_level: EducationLevel;
   min_experience_years: number;
   application_deadline: string | null;
@@ -154,4 +156,12 @@ export interface VacancyInput {
 
 export function createVacancy(payload: VacancyInput) {
   return postJson<JobVacancy, VacancyInput>("/job-vacancies", payload);
+}
+
+/**
+ * Verify a user-entered link in real time via the backend's Google Safe
+ * Browsing wrapper. Returns a verdict; the caller debounces before invoking.
+ */
+export function checkLinkSafety(url: string) {
+  return postJson<LinkSafety, { url: string }>("/link-safety", { url });
 }

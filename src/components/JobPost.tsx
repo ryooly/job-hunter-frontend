@@ -12,8 +12,15 @@ import {
   type CompanyInput,
   type VacancyInput,
 } from "../api";
-import type { Company, District, EducationLevel, JobVacancy } from "../types";
+import type {
+  Company,
+  District,
+  EducationLevel,
+  JobVacancy,
+  LinkSafety,
+} from "../types";
 import { educationLabel } from "../utils/format";
+import { useLinkSafety } from "../hooks/useLinkSafety";
 import { SkillBadge, SUGGESTED_SKILLS } from "./SkillBadge";
 
 interface JobPostProps {
@@ -182,6 +189,45 @@ function useComboBehavior(
 }
 
 /**
+ * Maps the debounced link-verification state to a status line: what to show,
+ * how to colour it, and whether it is an alert. Returns null for an empty
+ * field. A failed lookup reads as "not verified", never as "dangerous".
+ */
+function linkStatusView(
+  link: string,
+  safety: { checking: boolean; result: LinkSafety | null },
+): { className: string; message: string; alert: boolean } | null {
+  if (link.trim() === "") return null;
+  if (safety.checking || !safety.result) {
+    return {
+      className: "post-link-checking",
+      message: "Memeriksa tautan…",
+      alert: false,
+    };
+  }
+  const r = safety.result;
+  if (r.checked && !r.safe) {
+    return {
+      className: "post-link-danger",
+      message: `Tautan ini ditandai berbahaya (${r.threat_types.join(", ") || "Safe Browsing"}). Ganti tautan sebelum memasang.`,
+      alert: true,
+    };
+  }
+  if (r.checked && r.safe) {
+    return {
+      className: "post-link-ok",
+      message: "Tautan terverifikasi aman.",
+      alert: false,
+    };
+  }
+  return {
+    className: "post-link-warn",
+    message: "Tautan belum dapat diverifikasi (Safe Browsing tidak tersedia).",
+    alert: false,
+  };
+}
+
+/**
  * Job-posting form. Covers the whole vacancy plus its company: pick an
  * existing company or enter a brand-new one (logo and cover image included),
  * choose the work district from the server list, and build the required-skills
@@ -225,6 +271,8 @@ export function JobPost({ onCancel }: JobPostProps) {
   const [experience, setExperience] = useState(0);
   const [durationDays, setDurationDays] = useState(30);
   const [deadline, setDeadline] = useState(""); // yyyy-mm-dd from the date input
+  // Optional external application URL; the "Apply" button opens this link.
+  const [link, setLink] = useState("");
 
   // --- skills: suggestion picker + free-text custom entries ---
   const [skills, setSkills] = useState<string[]>([]);
@@ -241,6 +289,13 @@ export function JobPost({ onCancel }: JobPostProps) {
   const companySearchRef = useRef<HTMLInputElement>(null);
   const districtComboRef = useRef<HTMLDivElement>(null);
   const districtSearchRef = useRef<HTMLInputElement>(null);
+
+  // Real-time (debounced) verification of the application link. When Google
+  // confirms the URL is dangerous we flag it and block the submit button.
+  const linkSafety = useLinkSafety(link);
+  const linkDangerous = Boolean(
+    linkSafety.result?.checked && !linkSafety.result.safe,
+  );
 
   // Load the company directory once; it backs the "pick existing" list.
   useEffect(() => {
@@ -361,6 +416,10 @@ export function JobPost({ onCancel }: JobPostProps) {
     if (companyMode === "new" && !newCompany.name.trim())
       found.push("Nama perusahaan wajib diisi.");
     if (!district) found.push("Pilih lokasi kerja (kecamatan).");
+    if (linkDangerous)
+      found.push(
+        "Tautan lamaran ditandai berbahaya. Ganti tautan sebelum memasang lowongan.",
+      );
     return found;
   };
 
@@ -374,6 +433,7 @@ export function JobPost({ onCancel }: JobPostProps) {
     responsibilities: blankOrNull(responsibilities),
     skills: finalSkills.length ? finalSkills.join(", ") : null,
     street_address: blankOrNull(streetAddress),
+    link: blankOrNull(link),
     min_education_level: education,
     min_experience_years: experience,
     // An explicit date wins; otherwise the backend derives it from duration.
@@ -451,6 +511,7 @@ export function JobPost({ onCancel }: JobPostProps) {
     setExperience(0);
     setDurationDays(30);
     setDeadline("");
+    setLink("");
     setSkills([]);
     setSkillDraft("");
     setErrors([]);
@@ -1020,6 +1081,28 @@ export function JobPost({ onCancel }: JobPostProps) {
                 onChange={(e) => setDeadline(e.target.value)}
               />
             </label>
+            <label className="post-field post-field-wide">
+              Link lamaran (opsional)
+              <input
+                type="url"
+                placeholder="https://perusahaan.com/lamar"
+                maxLength={500}
+                value={link}
+                onChange={(e) => setLink(e.target.value)}
+              />
+              {(() => {
+                const status = linkStatusView(link, linkSafety);
+                if (!status) return null;
+                return (
+                  <p
+                    className={`post-link-status ${status.className}`}
+                    role={status.alert ? "alert" : undefined}
+                  >
+                    {status.message}
+                  </p>
+                );
+              })()}
+            </label>
           </div>
           <p className="post-hint">
             Tanpa batas akhir di atas, tanggal kedaluwarsa dihitung otomatis
@@ -1104,7 +1187,16 @@ export function JobPost({ onCancel }: JobPostProps) {
           <button type="button" className="btn-outline" onClick={onCancel}>
             Batal
           </button>
-          <button type="submit" className="btn-solid" disabled={submitting}>
+          <button
+            type="submit"
+            className="btn-solid"
+            disabled={submitting || linkDangerous}
+            title={
+              linkDangerous
+                ? "Tautan lamaran ditandai berbahaya — ganti tautan dulu"
+                : undefined
+            }
+          >
             {submitting ? "Menyimpan…" : "Pasang lowongan"}
           </button>
         </div>

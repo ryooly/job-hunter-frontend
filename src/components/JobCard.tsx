@@ -114,10 +114,22 @@ export function JobCard({
 
       <div className="job-card-footer">
         {posted && <span className="job-posted">Diposting {posted}</span>}
-        <button type="button" className="btn-apply-sm">
-          Lamar
-          <SendIcon width={13} height={13} />
-        </button>
+        {vacancy.link ? (
+          <a
+            className="btn-apply-sm"
+            href={vacancy.link}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Lamar
+            <SendIcon width={13} height={13} />
+          </a>
+        ) : (
+          <button type="button" className="btn-apply-sm">
+            Lamar
+            <SendIcon width={13} height={13} />
+          </button>
+        )}
       </div>
     </article>
   );
