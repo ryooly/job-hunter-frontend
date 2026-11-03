@@ -271,7 +271,7 @@ export function JobPost({ onCancel }: JobPostProps) {
   const [experience, setExperience] = useState(0);
   const [durationDays, setDurationDays] = useState(30);
   const [deadline, setDeadline] = useState(""); // yyyy-mm-dd from the date input
-  // Optional external application URL; the "Apply" button opens this link.
+  // Required external application URL; the "Apply" button opens this link.
   const [link, setLink] = useState("");
 
   // --- skills: suggestion picker + free-text custom entries ---
@@ -416,6 +416,7 @@ export function JobPost({ onCancel }: JobPostProps) {
     if (companyMode === "new" && !newCompany.name.trim())
       found.push("Nama perusahaan wajib diisi.");
     if (!district) found.push("Pilih lokasi kerja (kecamatan).");
+    if (!link.trim()) found.push("Link lamaran wajib diisi.");
     if (linkDangerous)
       found.push(
         "Tautan lamaran ditandai berbahaya. Ganti tautan sebelum memasang lowongan.",
@@ -433,7 +434,7 @@ export function JobPost({ onCancel }: JobPostProps) {
     responsibilities: blankOrNull(responsibilities),
     skills: finalSkills.length ? finalSkills.join(", ") : null,
     street_address: blankOrNull(streetAddress),
-    link: blankOrNull(link),
+    link: link.trim(),
     min_education_level: education,
     min_experience_years: experience,
     // An explicit date wins; otherwise the backend derives it from duration.
@@ -1082,7 +1083,7 @@ export function JobPost({ onCancel }: JobPostProps) {
               />
             </label>
             <label className="post-field post-field-wide">
-              Link lamaran (opsional)
+              Link lamaran *
               <input
                 type="url"
                 placeholder="https://perusahaan.com/lamar"
